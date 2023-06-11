@@ -4,4 +4,5 @@ using MathematicalModeling;
 
 Console.WriteLine("Solving...");
 
-P2.Solve();
+// P2.Solve();
+P3.Solve();
