@@ -237,7 +237,7 @@ public static class P3
         }
         
         Console.WriteLine("Profit for each strategy after 100 randomizations");
-        Console.WriteLine("Split: 15 35 40 10");
+        Console.WriteLine("Split: 0.25, 0.25, 0.25, 0.25");
         for(int i = 0; i < n; ++i)
         {
             Console.WriteLine($"{_decisions[i]}: {profit[i]}");
@@ -251,15 +251,7 @@ public static class P3
 
     private static int GetRandomEconomyState(this Random random)
     {
-        // 15 35 40 10
-        var r = random.Next(0, 100);
-        return r switch
-        {
-            < 15 => 0,
-            < 50 => 1,
-            < 90 => 2,
-            _ => 3
-        };
+        return random.Next(0, 4);
     }
 
     private static void SmallestLoss()
@@ -332,20 +324,18 @@ public static class P3
         var p4 = solver.MakeNumVar(0, 1, "p4");
         
         solver.Add(p1 + p2 + p3 + p4 == 1);
+
+        var z = solver.MakeNumVar(double.NegativeInfinity, double.PositiveInfinity, "z");
+        solver.Add(z >= p1 * _game[0, 0] + p2 * _game[0, 1] + p3 * _game[0, 2] + p4 * _game[0, 3]);
+        solver.Add(z >= p1 * _game[1, 0] + p2 * _game[1, 1] + p3 * _game[1, 2] + p4 * _game[1, 3]);
+        solver.Add(z >= p1 * _game[2, 0] + p2 * _game[2, 1] + p3 * _game[2, 2] + p4 * _game[2, 3]);
+        solver.Add(z >= p1 * _game[3, 0] + p2 * _game[3, 1] + p3 * _game[3, 2] + p4 * _game[3, 3]);
         
-        var constraint = solver.MakeNumVar(Double.NegativeInfinity, Double.PositiveInfinity, $"q");
-        for (int i = 0; i < n; ++i)
-        {
-            solver.Add(constraint == p1 * _game[i, 0] + p2 * _game[i, 1] + p3 * _game[i, 2] + p4 * _game[i, 3]);
-        }
-        
+        solver.Minimize(z);
         var resultStatus = solver.Solve();
         
-        if (resultStatus != Solver.ResultStatus.OPTIMAL)
-        {
-            Console.WriteLine("The problem does not have an optimal solution!");
-            return;
-        }
+        Console.WriteLine("Result status:");
+        Console.WriteLine(resultStatus);
         
         Console.WriteLine("Solution:");
         Console.WriteLine($"p1 = {p1.SolutionValue()}");
@@ -353,7 +343,7 @@ public static class P3
         Console.WriteLine($"p3 = {p3.SolutionValue()}");
         Console.WriteLine($"p4 = {p4.SolutionValue()}");
         
-        Console.WriteLine($"Value of the game: {1 / (p1.SolutionValue() + p2.SolutionValue() + p3.SolutionValue() + p4.SolutionValue())}");
+        Console.WriteLine($"Value of the game: {z.SolutionValue()}");
     }
     
     public static T[] GetColumn<T>(this T[,] matrix, int columnNumber)
